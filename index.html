@@ -10,169 +10,198 @@
             --text: #1a1a1a;
             --accent: #0057b7;
             --gray: #f4f4f4;
+            --border: #eeeeee;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            line-height: 1.6;
             margin: 0;
             color: var(--text);
             background: var(--bg);
+            line-height: 1.5;
         }
 
+        /* Навигация */
         header {
-            padding: 2rem;
-            border-bottom: 1px solid var(--gray);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 100;
         }
+
+        .logo { font-weight: 800; letter-spacing: -0.5px; font-size: 1.2rem; text-transform: uppercase; }
 
         nav a {
             margin-left: 20px;
             text-decoration: none;
-            color: var(--text);
-            font-weight: 500;
+            color: #666;
             font-size: 0.9rem;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        h1 { font-weight: 700; letter-spacing: -1px; }
-        
-        /* Стили таблицы результатов */
-        .results-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 2rem;
-        }
-
-        .results-table th, .results-table td {
-            text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid var(--gray);
-        }
-
-        .results-table th { background: var(--gray); font-size: 0.8rem; text-transform: uppercase; }
-
-        /* Стили формы добавления */
-        .admin-panel {
-            background: var(--gray);
-            padding: 1.5rem;
-            margin-top: 3rem;
-            border-radius: 8px;
-        }
-
-        input, button {
-            padding: 10px;
-            margin: 5px 0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        button {
-            background: var(--accent);
-            color: white;
-            border: none;
+            transition: color 0.2s;
             cursor: pointer;
         }
 
+        nav a:hover, nav a.active { color: var(--accent); }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 3rem 1rem; }
+
+        /* Стили таблиц */
         .section { display: none; }
-        .section.active { display: block; }
+        .section.active { display: block; animation: fadeIn 0.3s; }
+
+        h1 { font-size: 2rem; margin-bottom: 2rem; font-weight: 700; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+        }
+
+        th {
+            text-align: left;
+            background: var(--gray);
+            padding: 12px;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:hover { background: #fafafa; }
+
+        /* Инструкция и статьи */
+        .card {
+            background: var(--gray);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="font-weight: bold; font-size: 1.2rem;">Qırım DNA</div>
-    <nav>
-        <a href="#" onclick="showSection('results')">Результаты</a>
-        <a href="#" onclick="showSection('buy')">Как купить</a>
-        <a href="#" onclick="showSection('articles')">Статьи</a>
+    <div class="logo">Qırım DNA Project</div>
+    <nav id="main-nav">
+        <a onclick="showSection('results')" class="active">Результаты</a>
+        <a onclick="showSection('how-to')">Как купить</a>
+        <a onclick="showSection('articles')">Статьи</a>
     </nav>
 </header>
 
 <div class="container">
     
-    <!-- СЕКЦИЯ: РЕЗУЛЬТАТЫ -->
     <div id="results" class="section active">
         <h1>Результаты исследований</h1>
-        <p>Список участников проекта и их подтвержденные гаплогруппы.</p>
-        
-        <table class="results-table" id="dnaTable">
+        <div id="loading">Загрузка данных...</div>
+        <table id="dna-table" style="display:none;">
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Род / Фамилия</th>
+                    <th>Фамилия</th>
                     <th>Регион</th>
                     <th>Гаплогруппа</th>
                 </tr>
             </thead>
-            <tbody>
-                <tr>
-                    <td>#12445</td>
-                    <td>Arslan</td>
-                    <td>Bakhchisaray</td>
-                    <td>R1b-Z2103</td>
-                </tr>
-            </tbody>
+            <tbody id="table-body">
+                </tbody>
         </table>
+    </div>
 
-        <!-- Форма для добавления (только для админа) -->
-        <div class="admin-panel">
-            <h3>Добавить новый результат</h3>
-            <input type="text" id="kitId" placeholder="ID набора">
-            <input type="text" id="surname" placeholder="Фамилия">
-            <input type="text" id="region" placeholder="Регион">
-            <input type="text" id="haplo" placeholder="Гаплогруппа">
-            <button onclick="addResult()">Добавить в таблицу</button>
+    <div id="how-to" class="section">
+        <h1>Как заказать тест</h1>
+        <div class="card">
+            <h3>1. Выбор теста</h3>
+            <p>Для участия в проекте рекомендуется заказывать тест <b>Y-37</b> или <b>Big Y-700</b> в лаборатории FamilyTreeDNA.</p>
         </div>
+        <div class="card">
+            <h3>2. Оплата и доставка</h3>
+            <p>Набор придет по почте. Вам нужно будет сделать мазок изнутри щеки и отправить пробирку обратно в Хьюстон.</p>
+        </div>
+        <a href="https://www.familytreedna.com/" target="_blank" class="btn">Перейти на FamilyTreeDNA</a>
     </div>
 
-    <!-- СЕКЦИЯ: КАК КУПИТЬ -->
-    <div id="buy" class="section">
-        <h1>Как заказать тест?</h1>
-        <ol>
-            <li>Зайдите на сайт <b>FamilyTreeDNA</b> (основная база проекта).</li>
-            <li>Выберите тест <b>Y-37</b> (для поиска предков по мужской линии).</li>
-            <li>Оплатите заказ и дождитесь конверта с набором.</li>
-            <li>Сделайте мазок за щекой и отправьте обратно.</li>
-        </ol>
-        <p>После получения результатов напишите в наш Telegram-канал @qirimdnaproject.</p>
-    </div>
-
-    <!-- СЕКЦИЯ: СТАТЬИ -->
     <div id="articles" class="section">
-        <h1>Статьи</h1>
-        <div style="margin-bottom: 2rem;">
-            <h3>Этногенез крымских татар</h3>
-            <p>Обзор формирования генофонда на основе текущих данных проекта...</p>
-            <a href="#" style="color: var(--accent)">Читать далее →</a>
+        <h1>Статьи и материалы</h1>
+        <div class="card">
+            <h3>Введение в генетическую генеалогию</h3>
+            <p>Основы того, как ДНК помогает найти предков и определить субклад.</p>
         </div>
     </div>
 
 </div>
 
 <script>
-    function showSection(id) {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+    // ВСТАВЬТЕ СЮДА СВОЮ ССЫЛКУ ИЗ GOOGLE ТАБЛИЦ (CSV):
+    const csvUrl = 'ВАША_ССЫЛКА_CSV_ТУТ';
+
+    async function loadData() {
+        try {
+            const response = await fetch(csvUrl);
+            const data = await response.text();
+            
+            // Парсим CSV (простой способ)
+            const rows = data.split('\n').slice(1); // убираем шапку
+            const tableBody = document.getElementById('table-body');
+            
+            rows.forEach(row => {
+                const cols = row.split(',');
+                if (cols.length >= 4) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${cols[0]}</td>
+                        <td>${cols[1]}</td>
+                        <td>${cols[2]}</td>
+                        <td><b>${cols[3]}</b></td>
+                    `;
+                    tableBody.appendChild(tr);
+                }
+            });
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dna-table').style.display = 'table';
+        } catch (error) {
+            console.error('Ошибка загрузки:', error);
+            document.getElementById('loading').innerText = 'Ошибка загрузки данных. Проверьте ссылку.';
+        }
     }
 
-    function addResult() {
-        const table = document.getElementById('dnaTable').getElementsByTagName('tbody')[0];
-        const row = table.insertRow();
-        row.insertCell(0).innerText = document.getElementById('kitId').value;
-        row.insertCell(1).innerText = document.getElementById('surname').value;
-        row.insertCell(2).innerText = document.getElementById('region').value;
-        row.insertCell(3).innerText = document.getElementById('haplo').value;
+    function showSection(id) {
+        // Переключение вкладок
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
         
-        // Очистка полей
-        document.querySelectorAll('.admin-panel input').forEach(i => i.value = '');
+        // Переключение активности ссылок
+        document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    // Загружаем данные при старте
+    if (csvUrl.startsWith('http')) {
+        loadData();
+    } else {
+        document.getElementById('loading').innerText = 'Сайт готов. Подключите Google Таблицу в коде.';
     }
 </script>
 
