@@ -21,7 +21,7 @@
             line-height: 1.5;
         }
 
-        /* Навигация */
+        /* Шапка и Логотип */
         header {
             padding: 1.5rem 2rem;
             border-bottom: 1px solid var(--border);
@@ -34,67 +34,64 @@
             z-index: 100;
         }
 
-        .logo { font-weight: 800; letter-spacing: -0.5px; font-size: 1.2rem; text-transform: uppercase; }
+        .logo-container { display: flex; align-items: center; gap: 12px; }
+        .logo-img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
+        .logo-text { font-weight: 800; letter-spacing: -0.5px; font-size: 1.2rem; text-transform: uppercase; }
 
-        nav a {
-            margin-left: 20px;
-            text-decoration: none;
-            color: #666;
-            font-size: 0.9rem;
-            transition: color 0.2s;
-            cursor: pointer;
-        }
-
+        nav a { margin-left: 20px; text-decoration: none; color: #666; font-size: 0.9rem; transition: color 0.2s; cursor: pointer; }
         nav a:hover, nav a.active { color: var(--accent); }
 
-        .container { max-width: 800px; margin: 0 auto; padding: 3rem 1rem; }
-
-        /* Стили таблиц */
+        .container { max-width: 900px; margin: 0 auto; padding: 3rem 1rem; }
         .section { display: none; }
         .section.active { display: block; animation: fadeIn 0.3s; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; font-weight: 700; }
+        
+        .subtitle { color: #666; font-size: 0.95rem; margin-bottom: 2rem; }
 
-        h1 { font-size: 2rem; margin-bottom: 2rem; font-weight: 700; }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-            font-size: 0.95rem;
+        /* Панель управления таблицей (Поиск и Счетчик) */
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            display: none; /* Скрыто до загрузки данных */
         }
 
+        .search-box {
+            padding: 10px 15px;
+            width: 100%;
+            max-width: 300px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+        
+        .search-box:focus { border-color: var(--accent); }
+
+        .total-counter { font-size: 0.9rem; color: #666; font-weight: 500; }
+
+        /* Таблица */
+        table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+        
+        /* Делаем заголовки кликабельными для сортировки */
         th {
             text-align: left;
             background: var(--gray);
             padding: 12px;
             font-weight: 600;
             border-bottom: 2px solid var(--border);
+            cursor: pointer;
+            user-select: none;
         }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid var(--border);
-        }
-
+        
+        th:hover { background: #e0e0e0; }
+        td { padding: 12px; border-bottom: 1px solid var(--border); }
         tr:hover { background: #fafafa; }
 
-        /* Инструкция и статьи */
-        .card {
-            background: var(--gray);
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-
-        .btn {
-            display: inline-block;
-            background: var(--accent);
-            color: white;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-            margin-top: 10px;
-            font-size: 0.9rem;
-        }
+        /* Карточки */
+        .card { background: var(--gray); padding: 1.5rem; border-radius: 8px; margin-bottom: 1rem; }
+        .btn { display: inline-block; background: var(--accent); color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 10px; font-size: 0.9rem; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -102,7 +99,11 @@
 <body>
 
 <header>
-    <div class="logo">Qırım DNA Project</div>
+    <div class="logo-container">
+        <!-- УБЕДИТЕСЬ, ЧТО ИМЯ ФАЙЛА СОВПАДАЕТ С ВАШИМ (logo.jpg или logo.png) -->
+        <img src="logo.jpg" alt="Logo" class="logo-img" onerror="this.style.display='none'">
+        <div class="logo-text">Qırım DNA Project</div>
+    </div>
     <nav id="main-nav">
         <a onclick="showSection('results')" class="active">Результаты</a>
         <a onclick="showSection('how-to')">Как купить</a>
@@ -112,96 +113,159 @@
 
 <div class="container">
     
+    <!-- СЕКЦИЯ РЕЗУЛЬТАТОВ -->
     <div id="results" class="section active">
-        <h1>Результаты исследований</h1>
-        <div id="loading">Загрузка данных...</div>
+        <h1>База данных</h1>
+        <div class="subtitle">Результаты генетических исследований участников проекта</div>
+        
+        <div id="loading">Загрузка данных из таблицы...</div>
+        
+        <div class="table-controls" id="table-controls">
+            <input type="text" id="searchInput" class="search-box" placeholder="Поиск по фамилии, селу или гаплогруппе..." onkeyup="searchTable()">
+            <div class="total-counter">Всего тестов: <span id="total-kits">0</span></div>
+        </div>
+
         <table id="dna-table" style="display:none;">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Фамилия</th>
-                    <th>Регион</th>
-                    <th>Гаплогруппа</th>
+                    <th onclick="sortTable('id')">ID ⇅</th>
+                    <th onclick="sortTable('surname')">Фамилия ⇅</th>
+                    <th onclick="sortTable('region')">Регион / Село ⇅</th>
+                    <th onclick="sortTable('haplogroup')">Гаплогруппа ⇅</th>
                 </tr>
             </thead>
             <tbody id="table-body">
-                </tbody>
+                <!-- Сюда попадут данные из Google Таблицы -->
+            </tbody>
         </table>
     </div>
 
+    <!-- СЕКЦИЯ КАК КУПИТЬ -->
     <div id="how-to" class="section">
         <h1>Как заказать тест</h1>
         <div class="card">
             <h3>1. Выбор теста</h3>
-            <p>Для участия в проекте рекомендуется заказывать тест <b>Y-37</b> или <b>Big Y-700</b> в лаборатории FamilyTreeDNA.</p>
+            <p>Для участия в проекте рекомендуется заказывать тест <b>Y-37</b> или глубокий тест <b>Big Y-700</b> в лаборатории FamilyTreeDNA.</p>
         </div>
         <div class="card">
             <h3>2. Оплата и доставка</h3>
-            <p>Набор придет по почте. Вам нужно будет сделать мазок изнутри щеки и отправить пробирку обратно в Хьюстон.</p>
+            <p>Набор придет по почте. Вам нужно будет сделать мазок изнутри щеки специальными щеточками и отправить пробирку обратно.</p>
         </div>
         <a href="https://www.familytreedna.com/" target="_blank" class="btn">Перейти на FamilyTreeDNA</a>
     </div>
 
+    <!-- СЕКЦИЯ СТАТЬИ -->
     <div id="articles" class="section">
         <h1>Статьи и материалы</h1>
         <div class="card">
             <h3>Введение в генетическую генеалогию</h3>
-            <p>Основы того, как ДНК помогает найти предков и определить субклад.</p>
+            <p>Основы того, как ДНК помогает найти предков и определить свой субклад.</p>
         </div>
     </div>
 
 </div>
 
 <script>
-    // ВСТАВЬТЕ СЮДА СВОЮ ССЫЛКУ ИЗ GOOGLE ТАБЛИЦ (CSV):
+    // ⚠️ ВСТАВЬТЕ СЮДА СВОЮ ССЫЛКУ ИЗ GOOGLE ТАБЛИЦ (CSV) ВМЕСТО ТЕКСТА НИЖЕ:
     const csvUrl = 'ВАША_ССЫЛКА_CSV_ТУТ';
+    
+    let globalData = []; // Массив для хранения всех данных
+    let sortDirection = false; // Направление сортировки
 
+    // Функция загрузки данных
     async function loadData() {
         try {
             const response = await fetch(csvUrl);
+            if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.text();
             
-            // Парсим CSV (простой способ)
-            const rows = data.split('\n').slice(1); // убираем шапку
-            const tableBody = document.getElementById('table-body');
+            const rows = data.split('\n').slice(1); // убираем шапку таблицы
             
-            rows.forEach(row => {
-                const cols = row.split(',');
-                if (cols.length >= 4) {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${cols[0]}</td>
-                        <td>${cols[1]}</td>
-                        <td>${cols[2]}</td>
-                        <td><b>${cols[3]}</b></td>
-                    `;
-                    tableBody.appendChild(tr);
-                }
-            });
+            // Формируем массив объектов из строк CSV
+            globalData = rows.map(row => {
+                // Разделяем строку по запятой, но игнорируем запятые внутри кавычек (стандарт CSV)
+                const cols = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+                return {
+                    id: cols[0] ? cols[0].replace(/"/g, '').trim() : '',
+                    surname: cols[1] ? cols[1].replace(/"/g, '').trim() : '',
+                    region: cols[2] ? cols[2].replace(/"/g, '').trim() : '',
+                    haplogroup: cols[3] ? cols[3].replace(/"/g, '').trim() : ''
+                };
+            }).filter(item => item.id !== ''); // Фильтруем пустые строки
 
+            renderTable(globalData);
+            
+            // Показываем интерфейс
+            document.getElementById('total-kits').innerText = globalData.length;
             document.getElementById('loading').style.display = 'none';
+            document.getElementById('table-controls').style.display = 'flex';
             document.getElementById('dna-table').style.display = 'table';
+            
         } catch (error) {
             console.error('Ошибка загрузки:', error);
-            document.getElementById('loading').innerText = 'Ошибка загрузки данных. Проверьте ссылку.';
+            document.getElementById('loading').innerText = 'Ошибка загрузки данных. Проверьте правильность CSV ссылки.';
         }
     }
 
+    // Функция отрисовки таблицы
+    function renderTable(dataArray) {
+        const tableBody = document.getElementById('table-body');
+        tableBody.innerHTML = ''; // Очищаем таблицу перед отрисовкой
+        
+        dataArray.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.id}</td>
+                <td>${item.surname}</td>
+                <td>${item.region}</td>
+                <td><b>${item.haplogroup}</b></td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    }
+
+    // Функция поиска (фильтрации)
+    function searchTable() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const filteredData = globalData.filter(item => {
+            return item.id.toLowerCase().includes(query) || 
+                   item.surname.toLowerCase().includes(query) || 
+                   item.region.toLowerCase().includes(query) || 
+                   item.haplogroup.toLowerCase().includes(query);
+        });
+        renderTable(filteredData);
+    }
+
+    // Функция сортировки при клике на заголовок колонки
+    function sortTable(key) {
+        sortDirection = !sortDirection; // Меняем направление сортировки (А-Я или Я-А)
+        
+        globalData.sort((a, b) => {
+            let valA = a[key].toLowerCase();
+            let valB = b[key].toLowerCase();
+            
+            if (valA < valB) return sortDirection ? -1 : 1;
+            if (valA > valB) return sortDirection ? 1 : -1;
+            return 0;
+        });
+        
+        searchTable(); // Перерисовываем таблицу с учетом текущего текста в поиске
+    }
+
+    // Навигация по вкладкам
     function showSection(id) {
-        // Переключение вкладок
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         
-        // Переключение активности ссылок
         document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
         event.target.classList.add('active');
     }
 
-    // Загружаем данные при старте
+    // Запуск загрузки при открытии сайта
     if (csvUrl.startsWith('http')) {
         loadData();
     } else {
-        document.getElementById('loading').innerText = 'Сайт готов. Подключите Google Таблицу в коде.';
+        document.getElementById('loading').innerText = 'Ожидание подключения Google Таблицы (вставьте ссылку в код).';
     }
 </script>
 
